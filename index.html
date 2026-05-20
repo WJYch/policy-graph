@@ -20,8 +20,15 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .card{background:var(--bg3);border:1px solid var(--bd);border-radius:var(--r);padding:18px;margin-bottom:14px}
 .card h2{font-size:15px;font-weight:600;margin-bottom:12px}.card h3{font-size:13px;font-weight:600;margin-bottom:8px;color:var(--ac)}
 .card p{color:var(--t2);font-size:12px;margin-bottom:6px}
-.g2{display:grid;grid-template-columns:1fr 1fr;gap:14px}@media(max-width:860px){.g2{grid-template-columns:1fr}}
-.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}@media(max-width:860px){.g3{grid-template-columns:1fr}}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+/* Responsive: portrait/vertical monitor → single column, taller elements */
+@media(orientation:portrait),(max-width:860px){
+  .g2,.g3{grid-template-columns:1fr!important}
+  #reader-layout{grid-template-columns:1fr!important}
+  .ct{padding:10px}.card{padding:14px}
+  #graph-canvas{height:55vh!important;min-height:400px;max-height:800px}
+}
 .fg{margin-bottom:10px}
 .fg label{display:block;font-size:12px;font-weight:500;margin-bottom:3px;color:var(--t2)}
 .fg input,.fg select,.fg textarea{width:100%;padding:8px 11px;background:var(--bg4);border:1px solid var(--bd);border-radius:var(--rs);color:var(--t1);font-size:12px;outline:none}
@@ -615,7 +622,9 @@ function renderGraph() {
   const canvas = document.getElementById('graph-canvas');
   const rect = canvas.parentElement.getBoundingClientRect();
   canvas.width = canvas.parentElement.clientWidth || 600;
-  canvas.height = 480;
+  // Portrait/vertical monitor → taller canvas for better visibility
+  const isPortrait = window.innerHeight > window.innerWidth;
+  canvas.height = isPortrait ? Math.min(window.innerHeight * 0.55, 700) : 480;
   const ctx = canvas.getContext('2d');
   
   if (files.length === 0) {
