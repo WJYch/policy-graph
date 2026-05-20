@@ -1,0 +1,908 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>电力政策智能分析 · 知识图谱版</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<style>
+:root{--bg1:#0f1117;--bg2:#1a1d28;--bg3:#222639;--bg4:#1e2235;--t1:#e8eaed;--t2:#9aa0b0;--ac:#4fc3f7;--ac2:#81c784;--ac3:#ffb74d;--ar:#e57373;--ap:#ba68c8;--bd:#2d3148;--r:12px;--rs:8px}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg1);color:var(--t1);line-height:1.6}
+.hdr{background:linear-gradient(135deg,#1a237e,#0d47a1,#01579b);padding:20px 28px}
+.hdr h1{font-size:22px;color:#fff}.hdr h1 span{color:var(--ac)}.hdr p{color:rgba(255,255,255,.7);font-size:12px;margin-top:2px}
+.tabs{display:flex;background:var(--bg2);border-bottom:1px solid var(--bd);overflow-x:auto}
+.tb{padding:11px 16px;background:none;border:none;color:var(--t2);font-size:13px;font-weight:500;cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap}
+.tb:hover{color:var(--t1);background:rgba(255,255,255,.05)}
+.tb.active{color:var(--ac);border-bottom-color:var(--ac);background:rgba(79,195,247,.08)}
+.ct{max-width:1250px;margin:0 auto;padding:14px}
+.tc{display:none}.tc.active{display:block}
+.card{background:var(--bg3);border:1px solid var(--bd);border-radius:var(--r);padding:18px;margin-bottom:14px}
+.card h2{font-size:15px;font-weight:600;margin-bottom:12px}.card h3{font-size:13px;font-weight:600;margin-bottom:8px;color:var(--ac)}
+.card p{color:var(--t2);font-size:12px;margin-bottom:6px}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:14px}@media(max-width:860px){.g2{grid-template-columns:1fr}}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}@media(max-width:860px){.g3{grid-template-columns:1fr}}
+.fg{margin-bottom:10px}
+.fg label{display:block;font-size:12px;font-weight:500;margin-bottom:3px;color:var(--t2)}
+.fg input,.fg select,.fg textarea{width:100%;padding:8px 11px;background:var(--bg4);border:1px solid var(--bd);border-radius:var(--rs);color:var(--t1);font-size:12px;outline:none}
+.fg input:focus,.fg select:focus,.fg textarea:focus{border-color:var(--ac)}
+.fg textarea{font-size:12px;resize:vertical;min-height:50px;font-family:'Courier New',monospace}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 18px;border:none;border-radius:var(--rs);font-size:12px;font-weight:600;cursor:pointer}
+.btn-p{background:var(--ac);color:#000}.btn-p:hover{background:#6dd0fa}
+.btn-s{background:var(--bd);color:var(--t1)}
+.btn-g{background:var(--ac2);color:#000}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.alert{padding:8px 12px;border-radius:var(--rs);font-size:12px;margin-bottom:10px}
+.alert-i{background:rgba(79,195,247,.12);border:1px solid rgba(79,195,247,.3);color:var(--ac)}
+.alert-g{background:rgba(129,199,132,.12);border:1px solid rgba(129,199,132,.3);color:var(--ac2)}
+.alert-w{background:rgba(255,183,77,.12);border:1px solid rgba(255,183,77,.3);color:var(--ac3)}
+.fz{border:2px dashed var(--bd);border-radius:var(--r);padding:24px 14px;text-align:center;cursor:pointer;background:var(--bg4)}
+.fz:hover{border-color:var(--ac)}.fz .ic{font-size:28px}
+.sr{display:flex;gap:10px;flex-wrap:wrap}
+.sc{flex:1;min-width:100px;background:var(--bg4);padding:10px;border-radius:var(--rs);border:1px solid var(--bd);text-align:center}
+.sc .v{font-size:18px;font-weight:700;color:var(--ac)}
+.sc .v.g{color:var(--ac2)}.sc .v.o{color:var(--ac3)}.sc .v.r{color:var(--ar)}.sc .v.p{color:var(--ap)}
+.sc .l{font-size:10px;color:var(--t2);margin-top:1px}
+/* Wiki link */
+.wl{color:var(--ac);cursor:pointer;text-decoration:none;border-bottom:1px dashed var(--ac);transition:all .2s}
+.wl:hover{color:#fff;border-bottom-color:#fff;background:rgba(79,195,247,.12)}
+/* File card in file browser */
+.fc{padding:10px 14px;border:1px solid var(--bd);border-radius:var(--rs);margin-bottom:6px;cursor:pointer;transition:all .2s;display:flex;justify-content:space-between}
+.fc:hover{border-color:var(--ac);background:rgba(79,195,247,.04)}
+.fc .fn{color:var(--t1);font-weight:500}.fc .fm{color:var(--t2);font-size:11px}.fc .fl{color:var(--ac);font-size:11px}
+/* Inline preview modal */
+.modal{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.7);z-index:1000;display:flex;align-items:center;justify-content:center}
+.modal-inner{background:var(--bg3);border:1px solid var(--bd);border-radius:var(--r);max-width:800px;width:90%;max-height:80vh;overflow:auto;padding:24px}
+.modal-inner h2{margin-bottom:12px}.modal-inner .close{float:right;cursor:pointer;font-size:20px;color:var(--t2)}
+.modal-inner .close:hover{color:#fff}
+/* Graph canvas */
+#graph-canvas{width:100%;height:480px;cursor:grab;border-radius:var(--rs)}
+#graph-canvas:active{cursor:grabbing}
+/* File content render */
+.fcr h1{font-size:17px;color:var(--t1);margin:16px 0 8px}
+.fcr h2{font-size:15px;color:var(--t1);margin:12px 0 6px;border-bottom:1px solid var(--bd);padding-bottom:4px}
+.fcr h3{font-size:13px;color:var(--ac);margin:10px 0 4px}
+.fcr p,.fcr li{color:var(--t2);font-size:12px;margin-bottom:4px;line-height:1.7}
+.fcr table{font-size:11px;border-collapse:collapse;width:100%;margin:8px 0}
+.fcr th,.fcr td{border:1px solid var(--bd);padding:4px 8px;text-align:left}
+.fcr th{background:var(--bg4);color:var(--t2)}
+.fcr blockquote{border-left:3px solid var(--ac);padding:6px 12px;margin:8px 0;background:rgba(79,195,247,.04);color:var(--t2)}
+.fcr code{background:var(--bg4);padding:1px 5px;border-radius:3px;font-size:11px}
+.fcr hr{border:none;border-top:1px solid var(--bd);margin:12px 0}
+.fcr ul,.fcr ol{padding-left:20px}
+.fcr li{margin-bottom:2px}
+.fcr strong{color:#fff}
+.fcr em{color:var(--ac3)}
+@media print{body{background:#fff;color:#000}.hdr,.tabs,.nop{display:none}}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <h1>📜 电力政策智能分析 <span>· 知识图谱版</span></h1>
+  <p>Obsidian 双向链接 · 知识图谱 · IndexedDB 持久化 · AI 分析</p>
+</div>
+
+<div class="tabs">
+  <button class="tb active" data-t="files">📂 文件</button>
+  <button class="tb" data-t="graph">🕸️ 知识图谱</button>
+  <button class="tb" data-t="reader">📖 阅读器</button>
+  <button class="tb" data-t="ai">🤖 AI 分析</button>
+  <button class="tb" data-t="search">🔍 搜索</button>
+</div>
+
+<div class="ct">
+
+<!-- TAB 1: FILES -->
+<div class="tc active" id="tc-files">
+  <div class="g2">
+    <div class="card">
+      <h2>📂 政策文件库</h2>
+      <p>上传 .md 文件（浏览器端持久化存储），或加载内置示例文件。</p>
+      <div class="fg">
+        <div class="fz" id="upzone"><div class="ic">📄</div><p>点击上传 .md 政策文件</p><input type="file" id="upfile" accept=".md" style="display:none"></div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn btn-p" id="btn-samples">📦 加载示例文件</button>
+        <button class="btn btn-s" id="btn-clear">🗑️ 清空数据</button>
+      </div>
+      <div id="file-stats" style="margin-top:8px;font-size:12px;color:var(--t2)"></div>
+    </div>
+    <div class="card" style="max-height:420px;overflow:auto">
+      <h2>📋 文件列表</h2>
+      <div id="file-list"><div style="color:var(--t2);font-size:12px;padding:20px;text-align:center">暂无文件，请上传或加载示例</div></div>
+    </div>
+  </div>
+  <div class="card" id="preview-card" style="display:none">
+    <h2 id="preview-title">📖 预览</h2>
+    <div id="preview-content" class="fcr"></div>
+  </div>
+</div>
+
+<!-- TAB 2: KNOWLEDGE GRAPH -->
+<div class="tc" id="tc-graph">
+  <div class="g2">
+    <div class="card">
+      <h2>🕸️ 知识图谱</h2>
+      <p>节点 = 政策文件 · 连线 = [[双向链接]] · 悬停看详情 · 拖拽可移动</p>
+      <canvas id="graph-canvas"></canvas>
+      <div id="graph-tip" style="margin-top:8px;font-size:12px;color:var(--t2);text-align:center"></div>
+    </div>
+    <div class="card">
+      <h2>📊 图谱统计</h2>
+      <div class="sr" id="graph-stats"></div>
+      <div id="graph-detail" style="margin-top:8px;font-size:12px;color:var(--t2)"></div>
+    </div>
+  </div>
+</div>
+
+<!-- TAB 3: READER -->
+<div class="tc" id="tc-reader">
+  <div class="g2" id="reader-layout">
+    <div class="card" style="max-height:70vh;overflow:auto">
+      <h2>📖 双栏阅读器</h2>
+      <div id="reader-file-list" style="font-size:12px"></div>
+    </div>
+    <div class="card" style="max-height:70vh;overflow:auto">
+      <h2 id="reader-title">选择文件开始阅读</h2>
+      <div id="reader-content" class="fcr" style="color:var(--t2);font-size:13px;padding:10px 0">左侧选择一个文件，右侧显示内容。[[链接]]可直接点击跳转。</div>
+    </div>
+  </div>
+</div>
+
+<!-- TAB 4: AI -->
+<div class="tc" id="tc-ai">
+  <div class="g2">
+    <div class="card">
+      <h2>🔑 AI 配置</h2>
+      <div class="fg"><label>DeepSeek API Key</label><input type="password" id="ai-key" placeholder="sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"></div>
+      <div class="fg"><label>选择分析范围</label><select id="ai-scope"><option value="all">全部文件综合</option></select></div>
+      <button class="btn btn-p" id="btn-ai" style="width:100%;justify-content:center;padding:12px">🤖 AI 政策分析</button>
+      <div id="ai-progress" style="display:none;margin-top:8px;text-align:center">
+        <div style="width:24px;height:24px;border:3px solid var(--bd);border-top:3px solid var(--ac);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto"></div>
+        <p style="font-size:12px;color:var(--t2);margin-top:4px" id="ai-status">分析中...</p>
+      </div>
+    </div>
+    <div class="card">
+      <h2>📊 分析概览</h2>
+      <div class="sr" id="ai-summary"></div>
+    </div>
+  </div>
+  <div class="card" id="ai-result" style="display:none">
+    <h2>🧠 AI 分析结果</h2>
+    <div id="ai-content"></div>
+  </div>
+</div>
+
+<!-- TAB 5: SEARCH -->
+<div class="tc" id="tc-search">
+  <div class="g2">
+    <div class="card">
+      <h2>🔍 全文搜索</h2>
+      <div class="fg"><input type="text" id="search-q" placeholder="输入关键词搜索..." style="font-size:13px;padding:10px"></div>
+      <button class="btn btn-p" id="btn-search" style="width:100%;justify-content:center">搜索</button>
+    </div>
+    <div class="card" style="max-height:60vh;overflow:auto">
+      <h2>📋 搜索结果</h2>
+      <div id="search-results" style="font-size:12px;color:var(--t2)">输入关键词开始搜索</div>
+    </div>
+  </div>
+</div>
+
+</div>
+
+<style>@keyframes spin{to{transform:rotate(360deg)}}</style>
+
+<script>
+// ======================== EMBEDDED SAMPLES ========================
+// 10 representative files with rich wikilink relationships
+const SAMPLE_FILES = [
+ {
+  "id": "国务院完善全国统一电力市场体系",
+  "title": "国家能源局关于组织申报新型电力系统建设第一批试点工作的通知",
+  "tags": [],
+  "links": [
+   "电力现货市场",
+   "虚拟电厂"
+  ],
+  "content": "---\ntags: [新型电力系统,试点,国家能源局]\naliases: [国能发电力〔2025〕53号]\ntype: 政策解析\n---\n\n# 国家能源局关于组织申报新型电力系统建设第一批试点工作的通知\n\n**TL;DR** 国家能源局组织新型电力系统第一批试点申报（2025年6月30日截止），设**7个试点方向**：构网型技术、系统友好型新能源电站、智能微电网、算力与电力协同、[[虚拟电厂]]、大规模高比例新能源外送、新一代煤电。超长期特别国债支持。\n\n## 试点形式\n\n- **项目试点**：依托典型项目，单一方向\n- **综合试点**：依托典型城市，多方向\n\n## 七个试点方向\n\n### 1. 构网型技术\n- 高比例新能源接入的弱电网地区应用\n- 提升系统强度和惯量支撑\n\n### 2. 系统友好型新能源电站\n- 提升置信出力至 **10%以上**\n\n### 3. 智能微电网\n- 提升自调峰、自平衡能力\n- 源网荷储一体化\n\n### 4. 算力与电力协同 ⭐\n- 绿电聚合供应\n- 源荷协同\n\n### 5. 虚拟电厂 ⭐\n- 聚合分散电力资源\n- 灵活调节能力\n- 参与[[电力现货市场]]\n\n### 6. 大规模高比例新能源外送\n- \"沙戈荒\"基地\n- 水风光一体化\n\n### 7. 新一代煤电\n- 清洁降碳\n- 高效调节\n\n## 组织实施\n\n1. **申报**：省级能源主管部门或央企组织，**2025年6月30日前**报送\n2. **评审**：第三方机构评审，优选确定\n3. **实施**：严格按方案建设，重大变更需申请\n4. **支持政策**：**超长期特别国债**支持，优先安排煤电规模\n5. **评估推广**：适时组织综合评估\n\n> [!todo] 行动项\n> - 关注各省试点名单公布，特别是[[虚拟电厂]]和算力电力协同方向的入选项目\n> - 测算本省是否有符合条件可申报的虚拟电厂项目\n\n> [!question] 延伸思考\n> - 虚拟电厂作为7个试点方向之一，说明国家层面已将其纳入新型电力系统核心组成，后续配套政策可期\n\n## 相关概念\n\n- [[电力现货市场]] — 本文涉及电力现货市场交易规则、日前实时市场或结算机制\n- [[虚拟电厂]] — 本文涉及虚拟电厂、负荷聚合或分布式资源聚合等内容\n",
+  "size": 969
+ },
+ {
+  "id": "发电侧容量电价机制",
+  "title": "完善发电侧容量电价机制",
+  "tags": [],
+  "links": [
+   "可靠容量补偿机制",
+   "容量市场"
+  ],
+  "content": "---\ntags: [容量电价, 发电侧, 价格机制]\naliases: [完善发电侧容量电价机制, 发改价格2026-114号]\ntype: 政策解析\n---\n\n# 完善发电侧容量电价机制\n\n## TL;DR\n**发改价格〔2026〕114号** 分类完善煤电、气电、抽水蓄能、新型储能容量电价机制，将煤电容量电价回收固定成本比例提升至不低于 **50%** ，并在现货市场连续运行后建立发电侧[[可靠容量补偿机制]]。\n\n## 总体思路\n- 适应新型电力系统和电力市场体系建设需要\n- 统筹电力安全稳定供应、能源绿色低碳转型和资源经济高效配置\n- 分类完善煤电、天然气发电、抽水蓄能、新型储能容量电价机制\n- 现货市场连续运行后，有序建立发电侧[[可靠容量补偿机制]]\n- 对机组可靠容量根据顶峰能力按统一原则进行补偿\n\n## 分类完善容量电价机制\n\n### 一、煤电及天然气发电容量电价\n- 煤电机组固定成本回收比例提升至不低于 **$50\\%$** （依据发改价格〔2023〕1501号）\n  - 各地可结合市场建设、煤机利用小时数等进一步提高\n- 省级价格主管部门可对天然气发电建立容量电价机制\n  - 按照回收天然气发电机组一定比例固定成本的方式确定\n\n### 二、抽水蓄能容量电价\n\n**633号文（发改价格〔2021〕633号）出台前开工电站：**\n- 容量电价继续实行政府定价\n- 由省级价格主管部门按633号文件办法核定或校核\n- 经营期满后，按弥补必要技改支出和运行维护成本的原则重新核价\n\n**633号文出台后开工电站：**\n- 每3—5年按弥补平均成本的原则，制定省级电网同期新开工电站统一的容量电价\n- 满功率发电时长低于6小时的相应折减\n- 执行年限统筹考虑市场建设、系统需求、电站可持续发展等确定\n- 自主参与电能量、辅助服务等市场\n- 市场收益按比例由电站分享；其余冲减系统运行费用、由用户分享\n\n### 三、电网侧独立新型储能容量电价\n- 对服务于系统安全运行、未参与配储的电网侧独立新型储能，各地可给予容量电价\n- 容量电价水平以当地煤电容量电价标准为基础，根据顶峰能力折算：\n  $$折算比例 = \\min\\left(\\frac{T_{\\text{放电}}}{T_{\\text{高峰}}}, 1\\right)$$\n  其中：\n  - $T_{\\text{放电}}$ — 满功率连续放电时长\n  - $T_{\\text{高峰}}$ — 全年最长净负荷高峰持续时长\n- 考虑电力市场建设进展、系统需求等因素确定\n- 实行清单制管理，项目清单由省级能源主管部门会同价格主管部门制定\n\n## 有序建立发电侧可靠容量补偿机制\n\n### 总体要求\n- 可靠容量：机组在全年系统顶峰时段能够持续稳定供电的容量\n- 现货市场连续运行后，适时建立补偿机制，按统一原则补偿\n- 补偿标准：以弥补市场边际机组在电能量和辅助服务市场不能回收的固定成本为基础，统筹考虑供需关系、用户承受能力、市场建设进展等因素确定\n- 新能源装机占比高、可靠容量需求大的地区应加快建立\n- 具备条件的地区可适时通过[[容量市场]]等方式形成容量电价\n\n### 补偿范围\n- 可包括煤电、气电和符合条件的电网侧独立新型储能等\n- 逐步扩展至抽水蓄能等其他具备可靠容量的机组\n- 对获得其他保障的容量不重复补偿\n- **政府定价的机组不予补偿**\n\n### 与容量电价政策的衔接\n- 补偿机制建立后，相关机组不再执行原有容量电价\n- 本通知出台后开工建设的抽水蓄能电站，可统一执行补偿机制并参与市场，市场收益全部由电站获得\n- 鼓励633号文出台后开工建设的抽水蓄能电站自主选择执行补偿机制并参与市场\n\n## 完善相关配套政策\n\n### 电力市场交易和价格机制\n- 煤电容量电价完善后，各地可适当调整煤电中长期市场交易价格下限\n- 适当放宽煤电中长期合同签约比例要求\n- 鼓励中长期合同中签订随市场供需、发电成本变化的灵活价格机制\n- **不得强制要求签订固定价**\n\n### 电费结算政策\n- 调节性电源的容量电费、可靠容量补偿费用，纳入当地系统运行费用\n- 现货市场连续运行地区：抽水蓄能抽发、储能充放电价按市场规则或现货实时价格执行\n- 现货市场未连续运行地区：抽水（充电）价格执行电网代理工商业购电价格\n- 抽水蓄能、储能抽水（充电）时视作用户，缴纳上网环节线损费用和系统运行费用，暂按单一电量制用户执行输配电价\n- 发电（放电）电量相应退减输配电费\n\n### 区域共用抽水蓄能容量电费分摊\n- 分摊比例根据容量分配比例确定，鼓励通过市场化方式优化\n- 已明确的按已明确比例执行\n- 尚未明确的由所在地省级主管部门组织协商确定\n\n## 组织实施\n\n> [!todo] 落地要求\n> - 省级价格主管部门会同相关部门完善容量电价政策，建立可靠容量补偿机制\n> - 省级能源主管部门科学测算电力系统可靠容量需求\n> - 建立用户经济承受能力评估制度，作为制定补偿标准、核准项目的重要依据\n> - 电力系统容量充裕或承受能力较弱的地区，从严控制新增调节性电源\n> - 未开展评估的项目不得纳入规划及核准\n> - 加强容量电费考核，分类考核，未达标扣减\n\n> [!question] 延伸思考\n> 可靠容量补偿机制与容量电价机制如何平滑过渡？储能容量电价折算公式中，全年最长净负荷高峰持续时长的具体取值标准有待细化。\n",
+  "size": 2256
+ },
+ {
+  "id": "电力中长期市场基本规则",
+  "title": "电力中长期市场基本规则（征求意见稿）",
+  "tags": [],
+  "links": [
+   "电力中长期市场",
+   "新型经营主体",
+   "电力交易中心",
+   "绿色电力证书",
+   "绿证",
+   "虚拟电厂"
+  ],
+  "content": "---\ntags: [电力中长期,市场规则,交易规则]\naliases: [中长期市场基本规则,电力中长期交易基本规则2025征求意见稿]\ntype: 交易规则\n---\n\n# 电力中长期市场基本规则（征求意见稿）\n\n**TL;DR**: 新版电力中长期市场基本规则（征求意见稿）替代2020年版，新增[[新型经营主体]]（虚拟电厂、负荷聚合商、储能、智能微电网）参与框架，统一跨省跨区与省内交易耦合，明确绿电交易、分时段结算、按日连续运营等要求。\n\n---\n\n## 适用范围与市场定义\n\n- **电力中长期市场**：数年、年、月、月内（含周、多日）等不同时间维度的电能量交易\n- 优先发电规模计划视为厂网间双边协商交易，纳入中长期市场管理\n- 覆盖全国范围内注册、交易、执行、结算、信息披露和监督管理\n\n---\n\n## 市场成员\n\n### 市场成员分类\n- **经营主体**：发电企业、售电公司、电力用户、[[新型经营主体]]（储能、虚拟电厂、负荷聚合商、智能微电网）\n- **市场运营机构**：电力交易机构、电力调度机构\n- **电网企业**：提供输配电服务\n\n### 新型经营主体（第四节）\n- **分类**：单一技术类（分布式光伏、分散式风电、储能、可调节负荷）和资源聚合类（虚拟电厂、负荷聚合商、智能微电网）\n- 独立储能在放电时段按发电企业身份、充电时段按电力用户身份参与交易\n- 同一聚合资源在同一时期只能与一家虚拟电厂或负荷聚合商签约\n- 资源聚合类应具备信息处理、运行监控、业务管理、计量监管、控制执行能力\n\n---\n\n## 交易品种与价格机制\n\n### 交易品种\n- **按交割周期**：数年、年度、月度、月内电能量交易\n- **按组织方式**：集中交易（集中竞价/集中撮合/滚动撮合/挂牌）和双边协商交易\n- **绿电交易**：以绿色电力+绿电环境价值为标的物，交易同时提供[[绿证]]\n\n### 价格机制\n- 成交价格由市场化方式形成，第三方不得干预\n- 绿电价格 = 电能量价格 + 绿电环境价值（分别明确，绿电环境价值不纳入峰谷分时）\n- 合同电价可选择固定价格或与月度煤电价格指数、现货市场均价联动\n- 分时段交易形成分时电价，不再人为规定分时电价水平和时段\n- 逐步推动月度/月内交易限价与现货交易限价贴近\n\n---\n\n## 交易组织\n\n### 跨省跨区与省内耦合\n- 跨经营区交易：北京电力交易中心 + 广州电力交易中心联合组织\n- 推动跨省跨区与省内交易联合组织\n- 中长期市场 **按日连续运营**\n\n### 交易约束与出清\n- 电网安全约束信息提前发布（可用输电容量、检修计划等）\n- 机组交易申报限额 = 可用发电能力（扣除已成交）\n- 售电公司/虚拟电厂申报限额按风险平抑能力条件确定\n\n### 绿色电力交易\n- 确保发电企业与电力用户一一对应，环境价值可追踪溯源\n- 鼓励数年绿电交易常态化开市\n- 绿电转让交易需一并转让对应绿电环境价值\n\n---\n\n## 交易校核\n\n| 校核类型 | 负责机构 | 时间要求 |\n|---|---|---|\n| 交易出清校核 | 电力交易机构 | 出清前，≤1个工作日 |\n| 电网安全校核 | 电力调度机构 | 数年/年度5个工作日，月度2个工作日，月内1个工作日 |\n\n- 安全校核未通过 → 按交易优先级逆序削减\n\n---\n\n## 结算要点\n\n- **结算周期**：按自然月，按日清分\n- **结算参考点**：中长期电量在现货市场的交割点\n- **结算方式**：差价结算或差量结算\n- 虚拟电厂/负荷聚合商及聚合资源按合同明确的电能量价格单独结算\n- 绿电：电能量与绿电环境价值分开结算\n- 绿证按 \"三者取小\" 原则确定\n\n---\n\n## 风险防控\n\n- **六大风险类型**：电力供需失衡、市场价格异常、不正当竞争、技术支持系统异常、合同违约、其他\n- 建立事前预警 → 事中防范 → 事后处置防控体系\n- 紧急风险时政府可授权市场暂停/中止/恢复\n\n---\n\n> [!todo] 行动项\n> 1. 虚拟电厂/负荷聚合商应尽快完成市场注册和技术条件准备\n> 2. 发电企业需适应按日连续运营的中长期交易节奏\n> 3. 关注各省实施细则对交易优先级、限价等具体参数的确定\n\n> [!question] 延伸思考\n> - 新型经营主体（VPP/负荷聚合商）的履约担保机制如何设计以防范信用风险？\n> - 带曲线签约、分时段结算是否对新能源发电企业的预测能力提出更高要求？\n> - \"不再人为规定分时电价水平和时段\"后，电网代理购电的分时价格如何确定？\n\n## 相关概念\n\n- [[电力中长期市场]] — 本文涉及电力中长期交易、年度月度合同或双边协商交易\n- [[电力交易中心]] — 本文涉及电力交易中心、交易机构或市场注册相关内容\n- [[绿色电力证书]] — 本文涉及绿证核发、交易或绿色电力证书管理相关内容\n- [[虚拟电厂]] — 本文涉及虚拟电厂、负荷聚合或分布式资源聚合等内容\n",
+  "size": 2089
+ },
+ {
+  "id": "虚拟电厂",
+  "title": "虚拟电厂",
+  "tags": [],
+  "links": [
+   "电力现货市场",
+   "1014_浙江电力市场管理实施细则",
+   "89_推动新型储能参与电力市场和调度运用",
+   "需求响应",
+   "新能源消纳",
+   "辅助服务",
+   "1034_安徽电力现货市场准入退出实施细则"
+  ],
+  "content": "---\ntitle: 虚拟电厂\ncreated: 2026-05-05\nupdated: 2026-05-05\ntype: concept\ntags: [需求响应, 国家级, 机制]\nsources: [[1034_安徽电力现货市场准入退出实施细则]], [[1014_浙江电力市场管理实施细则]], [[89_推动新型储能参与电力市场和调度运用]]\n---\n\n## 虚拟电厂\n\n**通过先进控制、计量、通信技术，将分布式光伏、储能、充电桩、可调负荷等分散资源聚合为一个整体参与电力市场的技术系统。**\n\n### 核心要点\n\n- **聚合资源**：**分布式光伏**、**用户侧储能**、**电动汽车充电桩**、**可调负荷**（空调、工业负荷等）\n- **市场参与品种**：\n  - **电力现货市场**：报量报价参与日前和实时市场\n  - **辅助服务市场**：提供调频、备用、爬坡等服务\n  - **需求响应市场**：参与削峰填谷需求响应\n- **聚合门槛**：各地政策不同，典型聚合容量下限为**5MW～20MW**，单点容量不低于**0.1MW**\n- **控制要求**：需具备**秒级**到**分钟级**的远程控制能力和实时监测能力\n- **收益模式**：电能量收益 + 辅助服务补偿 + 容量补偿 + 需求响应补贴\n- **准入要求**：需在电力交易中心注册，具备双向计量装置和远程通信通道\n\n### 与其他概念的关系\n\n- → [[需求响应]]：虚拟电厂是需求响应市场化的重要载体\n- → [[辅助服务]]：虚拟电厂可聚合资源参与调频、备用等辅助服务\n- → [[电力现货市场]]：虚拟电厂作为新型市场主体参与现货市场\n- → [[新能源消纳]]：虚拟电厂通过灵活调节促进分布式新能源就近消纳\n\n### 参考政策\n\n- [[1034_安徽电力现货市场准入退出实施细则]] — 含虚拟电厂准入条件\n- [[1014_浙江电力市场管理实施细则]] — 含负荷聚合商/虚拟电厂管理规定\n- [[89_推动新型储能参与电力市场和调度运用]] — 储能聚合参与\n\n### 最新动态\n\n2024年全国虚拟电厂建设加速，广东、浙江、江苏、安徽等**10余个省份**出台虚拟电厂实施细则。国家能源局推动将虚拟电厂纳入电力市场主体范围。典型项目聚合容量已达**500MW**级规模，调节响应时间在**1分钟**以内。\n",
+  "size": 1008
+ },
+ {
+  "id": "绿电交易",
+  "title": "绿电交易",
+  "tags": [],
+  "links": [
+   "电力现货市场",
+   "60_中国可再生能源绿色电力证书百问百答2025",
+   "电力中长期市场",
+   "84_可再生能源绿色电力证书全覆盖工作通知",
+   "159_北京电力交易中心绿色电力交易实施细则2024",
+   "18_可再生能源绿色电力证书管理实施细则",
+   "省间交易",
+   "212_南方区域跨省跨区\"点对点\"绿电交易工作方案（2025版）",
+   "绿色电力证书",
+   "碳排放权交易",
+   "69_绿色电力交易专章",
+   "59_可再生能源绿色电力证书核发实施细则试行"
+  ],
+  "content": "---\ntitle: 绿电交易\ncreated: 2026-05-05\nupdated: 2026-05-05\ntype: concept\ntags: [绿证绿电, 国家级, 制度]\nsources:\n  - [[69_绿色电力交易专章]]\n  - [[18_可再生能源绿色电力证书管理实施细则]]\n  - [[59_可再生能源绿色电力证书核发实施细则试行]]\n  - [[60_中国可再生能源绿色电力证书百问百答2025]]\n  - [[84_可再生能源绿色电力证书全覆盖工作通知]]\n  - [[212_南方区域跨省跨区\"点对点\"绿电交易工作方案（2025版）]]\n  - [[159_北京电力交易中心绿色电力交易实施细则2024]]\n---\n\n**绿色电力交易（绿电交易）是指电力用户直接购买可再生能源电能量及其对应的绿色电力证书（绿证）环境价值的交易方式，包含电能量交易与绿证环境价值两部分。**\n\n## 核心要点\n\n- **交易结构**：绿电交易 = **电能量价值**（市场化电价形成） + **绿证环境价值**（绿证价格）。两个价值可合并交易，也可**拆分**后绿证单独交易。\n- **交易方式**：以**双边协商**为主，交易双方自行约定交易电量、价格和曲线；也可通过**挂牌交易**和**集中竞价**方式组织。南方区域还支持**点对点绿电交易**。\n- **绿证核发与交易**：可再生能源项目每上网 **1MWh** 绿电核发 **1个**绿证（对应 **1000kWh**）。绿证交易方式包括**自负式双边交易**、**挂牌交易**和**集中竞价**。\n- **纳入碳排放核算**：企业购买的绿电消费量可纳入**碳排放核算**，用于抵扣企业范围二碳排放，衔接碳市场和绿色电力市场。\n- **省间绿电交易**：支持跨省跨区绿电交易，购电省份通过**省间联络线**购入绿电，同时获得对应的绿证权益，促进可再生能源在全国范围内的优化配置。\n- **消费认证**：绿电交易合同和绿证证书是用户绿电消费的**唯一凭证**，可开具绿电消费凭证用于ESG报告、绿色贸易和出口产品碳足迹声明。\n\n## 与其他概念的关系\n\n- → [[绿色电力证书]] 绿证是绿电交易中环境价值的载体\n- → [[碳排放权交易]] 绿电消费量可抵扣碳排放配额\n- → [[省间交易]] 绿电可通过省间交易通道实现跨省跨区交易\n- → [[电力中长期市场]] 绿电交易可在中长期市场框架内组织\n- → [[电力现货市场]] 绿电在现货市场优先出清\n\n## 涉及公式\n\n绿电交易结算价格：\n$$ P_{green} = P_{energy} + P_{certificate} $$\n\n其中 $P_{energy}$ 为电能量价格（元/kWh），$P_{certificate}$ 为绿证环境价值折算价格（元/kWh）。\n\n绿电环境价值核算：\n$$ E_{green} = Q_{green} \\times EF_{grid} $$\n\n其中 $E_{green}$ 为绿电对应的碳排放减排量（tCO₂），$Q_{green}$ 为绿电消费量（MWh），$EF_{grid}$ 为所在区域电网平均排放因子（tCO₂/MWh）。\n\n## 参考政策\n\n- [[69_绿色电力交易专章]] — 绿色电力交易专章\n- [[18_可再生能源绿色电力证书管理实施细则]] — 绿证管理制度基本框架\n- [[59_可再生能源绿色电力证书核发实施细则试行]] — 绿证核发操作细则\n- [[60_中国可再生能源绿色电力证书百问百答2025]] — 绿证绿电交易常见问题解答\n- [[84_可再生能源绿色电力证书全覆盖工作通知]] — 绿证全覆盖通知\n- [[212_南方区域跨省跨区\"点对点\"绿电交易工作方案（2025版）]] — 南方区域绿电交易规则\n- [[159_北京电力交易中心绿色电力交易实施细则2024]] — 北京电力交易中心绿电交易细则\n\n## 最新动态\n\n2024年1月，国家能源局启动绿证核发全覆盖，对所有可再生能源发电项目（含分布式光伏、分散式风电）核发绿证，交易量同比增长**超过100%**。国家发改委、统计局、能源局联合推进绿电消费量纳入碳排放核算的工作方案。\n",
+  "size": 1777
+ },
+ {
+  "id": "辅助服务",
+  "title": "辅助服务",
+  "tags": [],
+  "links": [
+   "电力现货市场",
+   "容量电价",
+   "需求响应",
+   "66_电力辅助服务市场基本规则_征求意见稿",
+   "1012_浙江电力调频辅助服务市场交易实施细则",
+   "75_建立健全电力辅助服务市场价格机制",
+   "虚拟电厂"
+  ],
+  "content": "---\ntitle: 辅助服务\ncreated: 2026-05-05\nupdated: 2026-05-05\ntype: concept\ntags: [辅助服务, 国家级, 机制]\nsources: [[66_电力辅助服务市场基本规则_征求意见稿]], [[75_建立健全电力辅助服务市场价格机制]], [[1012_浙江电力调频辅助服务市场交易实施细则]]\n---\n\n## 辅助服务\n\n**为保障电力系统安全稳定运行、维持电能质量而提供的非电能本体服务，包括调频、备用、调峰、爬坡、黑启动等。**\n\n### 核心要点\n\n- **主要品种**：**调频（AGC）**、**备用**（旋转/非旋转）、**调峰**、**爬坡**、**黑启动**、**无功调节**\n- **调频补偿**：按调频里程补偿，出清价格由市场竞价形成：\n  $$\n  \\text{调频补偿} = \\text{调频里程} \\times \\text{里程出清价} + \\text{容量补偿}\n  $$\n- **深度调峰补偿**：火电机组出力降至**50%以下**部分按阶梯补偿，补偿标准由各省级市场制定\n- **备用补偿**：旋转备用按**小时容量**付费，中标后无论是否调用均获得容量费用\n- **费用分摊**：辅助服务费用由发电侧和用户侧**共同分摊**，逐步推动用户侧承担\n- **成本传导**：辅助服务成本通过**电费附加**方式疏导，纳入工商业用户电费账单\n\n### 与其他概念的关系\n\n- → [[电力现货市场]]：现货市场与辅助服务市场联合出清，优化资源配置\n- → [[虚拟电厂]]：虚拟电厂可聚合可调资源参与调频、备用等辅助服务\n- → [[需求响应]]：需求响应资源通过负荷调节提供辅助服务\n- → [[容量电价]]：旋转备用机组同时获得容量补偿和辅助服务补偿\n\n### 参考政策\n\n- [[66_电力辅助服务市场基本规则_征求意见稿]] — 全国统一规则\n- [[75_建立健全电力辅助服务市场价格机制]] — 价格机制设计\n- [[1012_浙江电力调频辅助服务市场交易实施细则]] — 调频品种细则\n\n### 最新动态\n\n2024年国家能源局推动辅助服务市场全覆盖，要求各省2025年底前建立完善辅助服务市场。调频市场逐步由**单一制**转向\"容量+里程\"**两部制**补偿模式。新型储能参与辅助服务的门槛降低，**2小时以上**储能系统可参与调频、备用市场。\n",
+  "size": 1028
+ },
+ {
+  "id": "需求响应",
+  "title": "需求响应",
+  "tags": [],
+  "links": [
+   "电力现货市场",
+   "1014_浙江电力市场管理实施细则",
+   "89_推动新型储能参与电力市场和调度运用",
+   "新能源消纳",
+   "辅助服务",
+   "83_电力负荷管理办法_2023版",
+   "虚拟电厂"
+  ],
+  "content": "---\ntitle: 需求响应\ncreated: 2026-05-05\nupdated: 2026-05-05\ntype: concept\ntags: [需求响应, 国家级, 机制]\nsources: [[83_电力负荷管理办法_2023版]], [[89_推动新型储能参与电力市场和调度运用]], [[1014_浙江电力市场管理实施细则]]\n---\n\n## 需求响应\n\n**电力用户根据价格信号或激励机制主动调整用电行为，在系统需要时减少（削峰）或增加（填谷）用电负荷的市场化机制。**\n\n### 核心要点\n\n- **两种模式**：\n  - **市场化需求响应**：用户自愿参与，通过竞价获得补偿，由市场定价\n  - **有序用电**：政府行政指令，作为保供兜底手段，非常规情况下启动\n- **响应类型**：\n  - **削峰响应**：高峰时段减少用电，典型响应时段为**晚峰17:00-22:00**\n  - **填谷响应**：低谷时段增加用电，促进新能源消纳\n  - **紧急响应**：系统紧急状态下**15分钟内**快速压降负荷\n- **补偿方式**：\n  $$\n  \\text{补偿费用} = \\text{实际响应负荷（kW）} \\times \\text{响应时长（h）} \\times \\text{补偿单价（元/kWh）}\n  $$\n- **可调资源**：**工业可中断负荷**、**空调柔性控制**、**电动汽车充电**、**储能放电**、**虚拟电厂聚合**\n- **参与门槛**：单个用户或聚合商响应容量一般不低于**0.1MW**，调节速率不低于需求响应通知要求\n\n### 与其他概念的关系\n\n- → [[虚拟电厂]]：虚拟电厂是需求响应市场化的重要组织形式\n- → [[辅助服务]]：需求响应资源可参与调频、备用等辅助服务市场\n- → [[电力现货市场]]：现货市场高电价时段自然驱动用户主动削减负荷\n- → [[新能源消纳]]：填谷需求响应在新能源大发时段刺激用电，减少弃电\n\n### 参考政策\n\n- [[83_电力负荷管理办法_2023版]] — 负荷管理纲领性文件\n- [[89_推动新型储能参与电力市场和调度运用]] — 储能参与需求响应\n- [[1014_浙江电力市场管理实施细则]] — 负荷管理细则实例\n\n### 最新动态\n\n2024年国家发改委发布新版[[83_电力负荷管理办法_2023版]]，明确**市场化需求响应优先、有序用电兜底**的原则。各省建立需求响应专项补贴资金池，年度响应用容量达**5000万kW**以上。虚拟电厂参与需求响应成为主流模式，聚合响应时间从**小时级**缩短到**分钟级**。\n",
+  "size": 1124
+ },
+ {
+  "id": "江苏省电力现货市场连续结算",
+  "title": "江苏省电力中长期市场实施细则（征求意见稿）",
+  "tags": [],
+  "links": [
+   "经营主体",
+   "915_江苏电力市场中长期电能量交易实施细则V1.0",
+   "914_江苏电力市场中长期交易规则V2.0",
+   "中长期结算参考点",
+   "新型经营主体",
+   "878_江苏省电力中长期市场实施细则（正式版V2026）",
+   "绿色电力交易",
+   "虚拟电厂"
+  ],
+  "content": "---\ntags: 电力中长期,江苏电力市场,征求意见稿\naliases:\n  - 879_江苏中长期市场实施细则(征求意见稿)\n  - 江苏电力中长期市场实施细则(征求意见稿)\ntype: 政策解析\ncreated: 2026-05-06\nrelated:\n  - \"[[878_江苏省电力中长期市场实施细则（正式版V2026）]]\"\n  - \"[[914_江苏电力市场中长期交易规则V2.0]]\"\n  - \"[[915_江苏电力市场中长期电能量交易实施细则V1.0]]\"\n---\n\n# 江苏省电力中长期市场实施细则（征求意见稿）\n\n> [!abstract] **TL;DR**\n> **57KB** 征求意见稿，对标国家《电力中长期市场基本规则》全面重构江苏中长期市场体系，引入[[新型经营主体]]（虚拟电厂、负荷聚合商、智能微电网），建立**数年—年—月—月内—分时段能量块**多时间维度交易机制，设置发电侧 $2\\\\%$ /用户侧 $3\\\\%$ 偏差免考核阈值，采用[[中长期结算参考点]]差量结算方式，绿电环境价值偏差补偿价格初期按合同价 $25\\\\%$ 设定。\n\n## 与正式版(V2026)差异标注\n\n> [!warning] 版本说明\n> 本文件为 **878_正式版(V2026) 的征求意见稿**，核心差异：\n> - 正式版已于 2026 年发布并取代 2023 版规则\n> - 本稿部分条款在正式版中有细化调整\n> - 本稿增加了 [[新型经营主体]] 相关章节（第五、十七条等），正式版进一步明确\n\n## 第一章 总则\n\n- **目的依据**：依据《电力市场运行基本规则》《电力中长期市场基本规则》等，结合江苏实际制定\n- **适用范围**：江苏电力中长期市场的注册、交易、执行、结算、信息披露和监督管理\n- **市场成员**：[[经营主体]]（发电企业、售电公司、电力用户、新型经营主体）+ 运营机构（交易中心、调度中心）+ 电网企业\n- **用户分类**：\n  - **一类用户**：参与批发交易的电力用户\n  - **二类用户**：参与零售交易的电力用户\n- **[[新型经营主体]]定义**（第五条）：\n  - 单一技术类：分布式光伏/风电、储能、可调节负荷\n  - 资源聚合类：[[虚拟电厂]]（负荷聚合商）、智能微电网\n- 负荷类虚拟电厂参照售电公司，发电类虚拟电厂参照发电企业参与交易\n\n## 第三章 市场成员\n\n### 市场成员权利与义务（第十四~二十条）\n\n- **售电公司义务**（第十五条）：\n  - 提交履约保函/保证金/结算担保品\n  - 依法履行可再生能源消纳责任\n- **新型经营主体义务**（第十七条）：\n  - 提交履约保障凭证\n  - 聚合负荷侧资源须履行消纳责任\n\n### 经营主体参与条件（第二十一~二十九条）\n\n- 发电企业须取得核准/备案、电力业务许可证、签订并网调度协议\n- 工商业用户原则上全部进入电力市场\n- 新型储能、虚拟电厂按《电力市场注册基本规则》执行\n- 连续 $12$ 个月未交易者停牌处理\n- 被强制退出市场后，企业及法人代表 **3 年内**不得再注册\n\n## 第五章 交易品种和方式（第四十~四十七条）\n\n- **交易周期**：数年、年度、月度、月内（含旬、周、多日）\n- **交易品种**：\n  - 电能量直接交易\n  - 合同转让交易（发电侧/购电侧）\n  - [[绿色电力交易]]（绿电）\n- **交易方式**：\n  - 双边协商：自主协商，截止前可修改撤回\n  - 集中竞价：统一边际出清或撮合匹配\n    - 价格形成：买方/卖方曲线交叉点\n    - 电网企业报量不报价，作为价格接受者\n  - 滚动撮合：价格优先、时间优先\n  - 挂牌交易：单挂单摘或双挂双摘\n\n## 第六章 价格机制（第四十八~五十九条）\n\n$$\\\\text{绿电交易价格} = \\\\text{电能量价格} + \\\\text{绿电环境价值}$$\n\n其中：\n- 绿电环境价值不纳入峰谷分时电价及力调电费计算\n- 中长期合同可签订固定价格或灵活浮动价格\n\n**集中竞价出清**：\n$$\\\\text{边际成交价} = \\\\begin{cases}\n\\\\text{买方曲线与卖方曲线交叉点} \\\\\\\\\n\\\\text{最后一个交易配对双方价格的算术平均值}\n\\\\end{cases}$$\n\n$$\\\\text{撮合匹配成交价} = \\\\text{配对双方价格的算术平均值}$$\n\n$$\\\\text{月度集中竞价某时段成交价} \\\\leq \\\\text{燃煤机组价格上限（若燃煤机组有成交）}$$\n\n## 第七章 交易组织（第六十~八十七条）\n\n- 交易公告提前发布：数年/年度 ≥ 3 工作日，月度 ≥ 1 工作日\n- 交易单元：\n  - 火电/核电：每台/每套机组\n  - 独立储能：放电=发电企业，充电=电力用户\n  - 分时段能量块交易：按 D-2 到 D-3 组织，24 时段\n- **绿电交易**（第八十~八十七条）：\n  - 环境价值偏差补偿价格初期按合同价 $25\\\\%$ 设定\n  - 绿电合同可按月或更短周期转让\n  - 虚拟电厂可聚合分布式新能源参与绿电交易\n\n## 第八章 交易校核（第八十八~九十六条）\n\n- 交易出清校核（交易机构）：限额校核、限价校核\n- 电网安全校核（调度机构）：数年/年度 **5** 个工作日，月度 **2** 个工作日，月内 **1** 个工作日\n- 安全校核未通过时，按成交电量等比例削减\n\n## 第十章 计量与结算（第一百零二~一百二十七条）\n\n### 计量\n\n- 计量装置安装在产权分界点\n- 风电/光伏共用计量点时，按额定容量比例计算\n\n### 结算\n\n采用差量结算方式，引入中长期结算参考点：\n\n**发电侧**（参与日前市场）：\n$$\\\\text{中长期合约电费} = \\\\Sigma \\\\left[ \\\\text{合约电量} \\\\times (\\\\text{合约价格} + \\\\text{发电侧日前结算价格} - \\\\text{参考点现货电价}) \\\\right]$$\n\n**用户侧**（参与日前市场）：\n$$\\\\text{中长期合约电费} = \\\\Sigma \\\\left[ \\\\text{合约电量} \\\\times (\\\\text{合约价格} + \\\\text{用户侧日前结算价格} - \\\\text{参考点现货电价}) \\\\right]$$\n\n其中：\n- 中长期结算参考点在用户侧\n- 参考点现货价格优先由日前市场价格确定\n- 中长期合同照付不议，偏差按现货规则结算\n\n**绿电结算**（第一百二十~一百二十三条）：\n$$\\\\text{绿电环境价值结算电量} = \\\\min(\\\\text{合同电量},\\\\ \\\\text{剩余上网电量},\\\\ \\\\text{用户用电量})$$\n\n其中：\n- 绿电电能量与绿电环境价值分开结算\n- 新能源纳入机制的电量不重复获得绿证收益\n\n## 重要 Callout\n\n> [!todo] 行动项\n> - 售电公司/虚拟电厂须按要求提交履约保障凭证\n> - 经营主体连续 12 个月未交易将被停牌\n> - 二类用户到期未重新选择视为退出市场，按代理购电价格 **1.5 倍**执行\n\n> [!question] 延伸思考\n> - 征求意见稿与正式版的差异是否影响当前已签约的长期合同？\n> - 新型经营主体（虚拟电厂、智能微电网）的准入条件是否会进一步细化？\n> - 绿电环境价值 $25\\\\%$ 偏差补偿比例是否足以激励履约？\n",
+  "size": 3148
+ },
+ {
+  "id": "广东独立储能交易细则",
+  "title": "广东省独立储能参与电能量市场交易细则（试行）",
+  "tags": [],
+  "links": [
+   "新型储能",
+   "现货市场"
+  ],
+  "content": "# 广东省独立储能参与电能量市场交易细则（试行）\n\n> [!todo] **TL;DR** 明确[[新型储能]]（独立储能）准入条件为额定功率≥**5MW**、充放电≥**1小时**，可参与中长期和[[现货市场]]交易。现货出清SCUC/SCED模型完整含储能约束的LaTeX公式保留。首次明确统一结算点价格纳入独立储能的加权计算公式。\n\n## 1 总体要求\n\n- 建立健全独立储能参与电能量市场交易机制\n- 构建独立储能价格市场形成机制\n- 激励储能技术多元化发展，提升电力系统调峰、调频、爬坡等灵活调节能力\n- 促进清洁能源消纳\n\n## 2 准入条件\n\n独立储能须满足以下全部条件：\n\n1. 额定功率在**5兆瓦**及以上，额定功率下可持续充电、放电时间均不低于**1小时**\n2. 具备独立分时正反向计量条件\n3. 具备调度直控条件，能够可靠接收和执行调度机构下达的充放电曲线及控制指令\n4. 具备独立法人资格，或经法人单位授权\n5. 按要求签订并网协议、并网调度协议、购售电合同\n\n> [!question] 已参与电能量市场交易的独立储能，原则上不得自行退出市场。相关成本收益纳入输配电价的电网替代性储能，不参与市场交易。\n\n## 3 注册要求\n\n提供资料包括：\n- **基本信息**：投产材料、注册申请表、营业执照等\n- **技术参数**：额定容量（MWh）、额定充放电功率（MW）、最大/最小允许荷电状态、充放电能量转换效率、厂用电率\n- **交易单元**：接入同一 $220\\mathrm{kV}$ 上网节点、同一法人单位的独立储能作为一个交易单元\n\n## 4 中长期电能量交易\n\n### 交易品种\n\n可参与年度、月度、多日等周期的双边协商、挂牌和集中竞争交易\n\n### 交易方向\n\n- 双边协商或挂牌交易：同一场次允许买入和卖出双向交易\n- 同一场次挂牌交易中同一小时只允许单向交易\n- 集中竞争交易：同一标的只允许单向交易\n\n### 交易电量约束\n\n#### 月度净合约量约束\n\n$$\n\\text{标的月净合约量} = \\sum \\text{卖出标的月合约电量} - \\sum \\text{买入标的月合约电量}\n$$\n\n$$\n\\text{月度净合约量上限} = \\text{额定容量} \\times \\text{日均充放电循环次数} \\times \\text{当月天数} \\times \\text{调整参数} \\mathbf{y}_3\n$$\n\n$$\n\\text{月度净合约量下限} = -\\text{月度净合约量上限}\n$$\n\n#### 月度累计交易量约束\n\n$$\n\\text{标的月累计交易量} = \\sum \\text{卖出标的月合约电量} + \\sum \\text{买入标的月合约电量}\n$$\n\n$$\n\\text{月度累计交易量上限} = \\text{月度净合约上限} \\times \\text{调整参数f}_3\n$$\n\n#### 分时净合约量约束\n\n$$\n\\text{标的小时净合约量} = \\sum \\text{卖出标的小时合约电量} - \\sum \\text{买入标的小时合约电量}\n$$\n\n$$\n\\text{分时净合约量上限} = \\text{额定放电功率} \\times 1\\text{小时} \\times \\text{系数} \\mathbf{A}_3\n$$\n\n$$\n\\text{分时净合约量下限} = -\\text{额定充电功率} \\times 1\\text{小时} \\times \\text{系数} \\mathbf{A}_3\n$$\n\n### 可申报电量额度\n\n月度集中竞争交易可申报买入/卖出电量额度按标的时段分别设置，计算方式涉及分时净合约量约束、月度净合约量约束和月度累计交易量约束的嵌套取小。\n\n## 5 现货电能量交易\n\n独立储能可按\"**报量报价**\"或\"**报量不报价**\"方式参与现货电能量交易。\n\n### 报量不报价\n\n- 申报充放电出力计划曲线（96点）\n- 经安全校核后予以出清\n- 作为固定出力参与SCUC/SCED\n\n### 报量报价\n\n#### 交易申报\n\n- 最多**10段**充放电能量价格曲线\n- 充电功率以负值表示，放电功率以正值表示\n- 每段报价的出力区间长度不得小于 $\\max\\{(\\text{额定放电功率} - \\text{额定充电功率}) \\times 5\\%, 1\\text{兆瓦}\\}$\n- 报价曲线必须随出力增加**单调非递减**\n- 可申报日末荷电状态期望值\n\n#### 日前SCUC模型\n\n$$\n\\begin{array}{l} \\min \\sum_{i=1}^{N} \\sum_{t=1}^{T} \\left[ C_{i,t}(P_{i,t}) + C_{i,t}^{U} + C_{i,t}^{p\\min} \\right] + \\sum_{l=1}^{NL} \\sum_{t=1}^{T} M \\left[ SL_{l}^{+} + SL_{l}^{-} \\right] \\\\ + \\sum_{s=1}^{NS} \\sum_{t=1}^{T} M \\left[ SL_{s}^{+} + SL_{s}^{-} \\right] + \\sum_{es=1}^{ES} \\sum_{t=1}^{T} \\left[ \\lambda_{es}^{dis} P_{es,t}^{dis} + \\lambda_{es}^{ch} P_{es,t}^{ch} \\right] \\\\ \\end{array}\n$$\n\n其中：$N$发电机组总数，$T=98$（D日96个15分钟时段+D+1日2个时段），$P_{i,t}$机组出力，$C_{i,t}$运行费用，$C_{i,t}^{U}$启动费用，$C_{i,t}^{p\\min}$最小稳定技术出力费用，$M$松弛罚因子，$SL$潮流松弛变量，$\\lambda_{es}^{ch}$、$\\lambda_{es}^{dis}$储能充放电价格，$P_{es,t}^{ch}$、$P_{es,t}^{dis}$储能充放电功率\n\n##### ① 充放电功率约束\n\n$$\n\\begin{array}{l} \\alpha_{es,t} P_{es}^{dis,\\min} \\leq P_{es,t}^{dis} \\leq \\alpha_{es,t} P_{es}^{dis,\\max} \\\\ \\beta_{es,t} P_{es}^{ch,\\max} \\leq P_{es,t}^{ch} \\leq \\beta_{es,t} P_{es}^{ch,\\min} \\\\ 0 \\leq \\alpha_{es,t} + \\beta_{es,t} \\leq 1 \\\\ P_{es}^{ch,\\min} < 0, P_{es}^{ch,\\max} < 0 \\\\ \\end{array}\n$$\n\n##### ② 荷电状态约束\n\n$$\n\\begin{array}{l} E_{es,t} = E_{es,t-1} - \\eta_{es}^{ch} P_{es,t}^{ch} \\Delta t / E_{es} - P_{es,t}^{dis} \\Delta t / (\\eta_{es}^{dis} E_{es}) \\\\ \\underline{E_{es,t}} \\leq E_{es,t} \\leq \\overline{E_{es,t}} \\\\ \\end{array}\n$$\n\n##### ③ 日始末荷电状态约束\n\n$$\n\\begin{array}{l} E_{es,0} = E_{es}^{ini} \\\\ E_{es,T-2} = E_{es}^{fin} \\\\ \\end{array}\n$$\n\n##### ④ 充放电循环次数约束\n\n$$\n\\frac{\\sum_{t=1}^{T} (P_{es,t}^{dis} / \\eta_{es}^{dis} - P_{es,t}^{ch} \\eta_{es}^{ch}) \\Delta t}{2E_{es}} \\leq N_{es,circle}\n$$\n\n##### ⑤ 小时内充放电状态约束\n\n$$\n1 - \\alpha_{es,t} \\geq \\frac{1}{4} \\sum_{i=4n-3}^{4n} \\beta_{es,i}, t \\in [4n-3, 4n], n \\in [1,24]\n$$\n\n#### 日前SCED模型\n\n$$\n\\begin{array}{l} \\min \\sum_{i=1}^{N} \\sum_{t=1}^{T} \\left[ C_{i,t}(P_{i,t}) \\right] + \\sum_{l=1}^{NL} \\sum_{t=1}^{T} M \\left[ SL_{l}^{+} + SL_{l}^{-} \\right] + \\sum_{s=1}^{NS} \\sum_{t=1}^{T} M \\left[ SL_{s}^{+} + SL_{s}^{-} \\right] \\\\ + \\sum_{es=1}^{ES} \\sum_{t=1}^{T} \\left[ \\lambda_{es}^{dis} P_{es,t}^{dis} + \\lambda_{es}^{ch} P_{es,t}^{ch} \\right] \\\\ \\end{array}\n$$\n\n#### 日前LMP计算模型\n\n$$\n\\begin{array}{l} \\min \\sum_{i=1}^{N} \\sum_{t=1}^{T} \\left[ C_{i,t}(P_{i,t}) \\right] + \\sum_{l=1}^{NL} \\sum_{t=1}^{T} M^{\\prime} \\left[ SL_{l}^{+} + SL_{l}^{-} \\right] + \\sum_{s=1}^{NS} \\sum_{t=1}^{T} M^{\\prime} \\left[ SL_{s}^{+} + SL_{s}^{-} \\right] \\\\ + \\sum_{es=1}^{ES} \\sum_{t=1}^{T} \\left[ \\lambda_{es}^{dis} P_{es,t}^{dis} + \\lambda_{es}^{ch} P_{es,t}^{ch} \\right] \\\\ \\end{array}\n$$\n\n#### 实时电能量市场出清SCED模型\n\n$$\n\\begin{array}{l} \\min \\sum_{i=1}^{N} \\sum_{t=1}^{T} C_{i,t}(P_{i,t}) + \\sum_{l=1}^{NL} \\sum_{t=1}^{T} M [ SL_{l}^{+} + SL_{l}^{-} ] \\\\ + \\sum_{s=1}^{NS} \\sum_{t=1}^{T} M \\left[ SL_{s}^{+} + SL_{s}^{-} \\right] + \\sum_{w=1}^{NW} \\sum_{t=1}^{T} M_{loss} P_{w,t}^{loss} + \\sum_{es=1}^{ES} \\sum_{t=1}^{T} \\left[ \\lambda_{es}^{dis} P_{es,t}^{dis} + \\lambda_{es}^{ch} P_{es,t}^{ch} \\right] \\\\ \\end{array}\n$$\n\n实时增加约束：\n\n$$\nE_{es,4n}^{RT} = E_{es,4n}^{DA}, n \\in [1,24]\n$$\n\n即整点时刻日前出清荷电状态作为实时约束。\n\n### 市场定价\n\n#### 统一结算点价格（含储能）\n\n$$\nLMP_{t,\\text{日前}} = \\frac{\\sum_{m \\in \\text{市场机组},\\text{独立储能}} \\left[ (Q_{m,t,\\text{日前}} - Q_{m,t,\\text{代购}}) \\times LMP_{m,t,\\text{日前}} \\right]}{\\sum_{m \\in \\text{市场机组},\\text{独立储能}} ",
+  "size": 5892
+ },
+ {
+  "id": "浙江分布式新能源聚合",
+  "title": "浙江2025年10月分布式新能源聚合通知",
+  "tags": [],
+  "links": [
+   "1018_2024年浙江省电力市场化交易方案"
+  ],
+  "content": "---\ntags:\n  - 政策解析\n  - 浙江\n  - 分布式新能源\n  - 聚合\n  - 2025\naliases:\n  - 浙江2025年10月分布式新能源聚合通知\ntype: 政策解析\nsource: 969_关于组织2025年10月份浙江电力市场分布式新能源聚合的通知.md\nsource_size: 2.5KB\n---\n\n# 浙江2025年10月分布式新能源聚合通知\n\n## TL;DR\n\n**2.5KB** | **2025年9月** | 浙江电力交易中心组织2025年10月份分布式新能源聚合。聚合绑定/解绑窗口：**9月3日-9月15日18:00**。聚合协议有效期**10月1日-12月31日**，采用电子协议签订。已注册的分布式新能源发电企业和聚合商可参与操作。\n\n---\n\n## 一、10月分布式新能源聚合安排\n\n### （一）聚合绑定与解绑\n\n- **经营主体范围**：已在浙江电力交易平台注册的分布式新能源发电企业和聚合商\n- **操作时间**：2025年**9月3日-9月15日18:00**\n- **绑定流程**：聚合商在交易平台发起聚合 → 签订电子委托协议（**电子印章=纸质效力**）\n- **解绑流程**：任一方发起解除协议申请 → 另一方审核通过\n- **温馨提醒**：订单创建后**3个工作日**内完成绑定/解绑流程\n\n### （二）聚合协议\n\n- 有效期：**2025年10月1日-12月31日**\n- 协议期限不超过2025年12月31日\n\n## 二、其他事项\n\n- 操作指南详见浙江电力交易平台 [https://www.zjpx.com.cn](https://www.zjpx.com.cn) → \"信息披露-其他信息-通知公告\"\n- 关注微信公众号\"浙江电力交易中心有限公司\"获取最新信息\n\n## 操作提示\n\n> [!NOTE] **聚合操作注意事项**\n> 1. **电子签章核对**：在聚合绑定前，经营主体需提前核对电子签章有效性\n> 2. **平台信息维护**：确保交易平台中的企业信息、联系方式等为最新\n> 3. **时间窗口**：绑定/解绑操作仅在 **9月3日-9月15日18:00** 期间有效，逾期不受理\n> 4. **协议生效**：绑定操作完成后，委托协议 **次月起生效**（即10月1日）\n> 5. **解绑时效**：发起解绑申请后需在 **3个工作日内** 完成审核流程\n\n## 政策依据\n\n- [[1018_2024年浙江省电力市场化交易方案|浙发改能源〔2024〕289号]] — 2025年浙江省电力市场化交易方案\n- 浙发改能源〔2024〕443号 — 2025年度市场化交易相关工作的通知\n- 浙江电力市场管理实施细则（2.0版）\n- 浙江电力中长期交易实施细则-绿色电力交易专章（2.0版）\n",
+  "size": 1193
+ }
+];
+// ======================== INDEXED DB ========================
+const DB = { db: null };
+function dbOpen() {
+  return new Promise((res,rej)=>{
+    const r = indexedDB.open('PolicyDB', 1);
+    r.onupgradeneeded = e => {
+      const db = e.target.result;
+      if (!db.objectStoreNames.contains('files')) {
+        const store = db.createObjectStore('files', { keyPath: 'id' });
+        store.createIndex('title', 'title', { unique: false });
+        store.createIndex('tags', 'tags', { unique: false });
+      }
+    };
+    r.onsuccess = e => { DB.db = e.target.result; res(); };
+    r.onerror = e => rej(e);
+  });
+}
+
+function dbPut(file) {
+  return new Promise((res,rej)=>{
+    const tx = DB.db.transaction('files','readwrite');
+    tx.objectStore('files').put(file);
+    tx.oncomplete = () => res();
+    tx.onerror = e => rej(e);
+  });
+}
+
+function dbGetAll() {
+  return new Promise((res,rej)=>{
+    const tx = DB.db.transaction('files','readonly');
+    const r = tx.objectStore('files').getAll();
+    r.onsuccess = () => res(r.result);
+    r.onerror = e => rej(e);
+  });
+}
+
+function dbDelete(id) {
+  return new Promise((res,rej)=>{
+    const tx = DB.db.transaction('files','readwrite');
+    tx.objectStore('files').delete(id);
+    tx.oncomplete = () => res();
+  });
+}
+
+function dbClear() {
+  return new Promise((res,rej)=>{
+    const tx = DB.db.transaction('files','readwrite');
+    tx.objectStore('files').clear();
+    tx.oncomplete = () => res();
+  });
+}
+
+// ======================== WIKILINK PARSER ========================
+function extractWikilinks(text) {
+  const links = [];
+  const re = /\[\[([^\]]+)\]\]/g;
+  let m;
+  while ((m = re.exec(text)) !== null) {
+    const parts = m[1].split('|');
+    links.push({ target: parts[0].trim(), display: parts[1] ? parts[1].trim() : parts[0].trim() });
+  }
+  return links;
+}
+
+function renderWikiContent(text, files) {
+  // Extract YAML front matter
+  text = text.replace(/^---[\s\S]*?---\s*/, '');
+  // Remove Obsidian callouts
+  text = text.replace(/>\s*\[!\w+\][\s\S]*?(?=\n\n|\n#|$)/g, '');
+  // Remove LaTeX math blocks (keep plain text)
+  text = text.replace(/\$\$[\s\S]*?\$\$/g, '[数学公式]');
+  text = text.replace(/\$[^$]*?\$/g, '');
+  
+  // Convert markdown headings
+  let html = text
+    .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+    .replace(/^## (.+)$/gm, '<h2>$1</h2>')
+    .replace(/^# (.+)$/gm, '<h1>$1</h1>')
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.+?)\*/g, '<em>$1</em>')
+    .replace(/^> (.+)$/gm, '<blockquote>$1</blockquote>')
+    .replace(/^- (.+)$/gm, '<li>$1</li>')
+    .replace(/^(\d+)\. (.+)$/gm, '<li>$1. $2</li>')
+    .replace(/\|(.+)\|/g, (m) => {
+      if (m.includes('---')) return '';
+      const cells = m.split('|').filter(c => c.trim());
+      if (cells.length <= 1) return m;
+      return '<tr><td>' + cells.join('</td><td>') + '</td></tr>';
+    })
+    .replace(/\n\n/g, '</p><p>')
+    .replace(/\n/g, '<br>');
+  
+  // Wrap table rows
+  html = html.replace(/(<tr>.*?<\/tr>)+/g, '<table>$&</table>');
+  html = '<p>' + html + '</p>';
+  
+  // Replace [[wikilinks]] with clickable links
+  html = html.replace(/\[\[([^\]]+)\]\]/g, (m, content) => {
+    const parts = content.split('|');
+    const target = parts[0].trim();
+    const display = parts[1] ? parts[1].trim() : target;
+    // Check if target exists in files
+    const exists = files.some(f => f.id === target || f.title === target || f.id.includes(target));
+    const cls = exists ? 'wl" onclick="openWikilink(\\'' + target.replace(/'/g,"\\'") + '\\')"' : 'wl" style="opacity:0.6;cursor:help" title="文件未加载';
+    return '<a class="' + cls + '">' + display + '</a>';
+  });
+  
+  return html;
+}
+
+// ======================== GLOBAL STATE ========================
+let files = [];
+let graphRunning = false;
+
+// ======================== INIT ========================
+document.addEventListener('DOMContentLoaded', async () => {
+  // Init DB
+  try {
+    await dbOpen();
+    const stored = await dbGetAll();
+    if (stored.length > 0) {
+      files = stored;
+    }
+  } catch(e) { console.log('DB init:', e); }
+  
+  // Setup events
+  document.querySelectorAll('.tb').forEach(b => {
+    b.addEventListener('click', () => {
+      document.querySelectorAll('.tb').forEach(x => x.classList.remove('active'));
+      document.querySelectorAll('.tc').forEach(x => x.classList.remove('active'));
+      b.classList.add('active');
+      document.getElementById('tc-' + b.dataset.t).classList.add('active');
+      if (b.dataset.t === 'graph') renderGraph();
+      if (b.dataset.t === 'reader') renderReader();
+    });
+  });
+  
+  document.getElementById('upzone').onclick = () => document.getElementById('upfile').click();
+  document.getElementById('upfile').onchange = handleUpload;
+  document.getElementById('btn-samples').onclick = loadSamples;
+  document.getElementById('btn-clear').onclick = clearAll;
+  document.getElementById('btn-ai').onclick = runAI;
+  document.getElementById('btn-search').onclick = searchFiles;
+  document.getElementById('search-q').onkeydown = e => { if(e.key==='Enter') searchFiles(); };
+  
+  // Load samples if empty
+  if (files.length === 0) await loadSamples();
+  else renderFileList();
+});
+
+// ======================== FILE MANAGEMENT ========================
+async function handleUpload(e) {
+  for (const file of e.target.files) {
+    const text = await file.text();
+    const id = file.name.replace(/\.md$/,'');
+    const title = extractTitle(text) || id;
+    const tags = extractTags(text);
+    const links = extractWikilinks(text).map(l => l.target);
+    const f = { id, title, tags, links, content: text, size: text.length, updated: Date.now() };
+    files = files.filter(x => x.id !== id);
+    files.push(f);
+    await dbPut(f);
+  }
+  renderFileList();
+  showMsg('g', `✅ 已上传 ${e.target.files.length} 个文件`);
+}
+
+async function loadSamples() {
+  // Define sample files inline (truncated for space - full content loaded from embedded data)
+  const sampleIds = [
+    '国务院完善全国统一电力市场体系',
+    '发电侧容量电价机制',
+    '电力中长期市场基本规则',
+    '虚拟电厂',
+    '绿电交易',
+    '辅助服务',
+    '需求响应',
+    '江苏省电力现货市场连续结算',
+    '广东独立储能交易细则',
+    '浙江分布式新能源聚合'
+  ];
+  
+  if (SAMPLE_FILES.length === 0) {
+    showMsg('w','示例文件数据未完全嵌入，部分功能受限');
+    return;
+  }
+  
+  for (const sf of SAMPLE_FILES) {
+    const existing = files.findIndex(f => f.id === sf.id);
+    if (existing >= 0) files[existing] = sf;
+    else files.push(sf);
+    await dbPut(sf);
+  }
+  
+  renderFileList();
+  showMsg('g', `✅ 已加载 ${SAMPLE_FILES.length} 个示例文件`);
+}
+
+function extractTitle(text) {
+  const m = text.match(/^#\s+(.+)$/m);
+  return m ? m[1].trim() : '';
+}
+
+function extractTags(text) {
+  const m = text.match(/tags:\s*\[([^\]]+)\]/);
+  return m ? m[1].split(',').map(t => t.trim()) : [];
+}
+
+async function clearAll() {
+  if (!confirm('确定清空所有已存储的文件？')) return;
+  await dbClear();
+  files = [];
+  renderFileList();
+  showMsg('i','已清空');
+}
+
+function renderFileList() {
+  const el = document.getElementById('file-list');
+  const stats = document.getElementById('file-stats');
+  if (files.length === 0) {
+    el.innerHTML = '<div style="color:var(--t2);font-size:12px;padding:20px;text-align:center">暂无文件</div>';
+    stats.innerHTML = '';
+    return;
+  }
+  
+  el.innerHTML = files.map(f => {
+    const linkCount = (f.links || []).length;
+    return '<div class="fc" onclick="openFile(\'' + f.id.replace(/'/g,"\\'") + '\')">' +
+      '<div><div class="fn">' + escapeHtml(f.title || f.id) + '</div>' +
+      '<div class="fm">' + f.id.substring(0,40) + ' · ' + formatSize(f.size) + '</div></div>' +
+      '<div class="fl">🔗 ' + linkCount + '</div></div>';
+  }).join('');
+  
+  const totalLinks = files.reduce((a,f) => a + (f.links||[]).length, 0);
+  stats.innerHTML = `📂 ${files.length} 个文件 · 🔗 ${totalLinks} 条双向链接 · 💾 本地持久化存储`;
+  
+  // Update selects
+  const sel = document.getElementById('ai-scope');
+  sel.innerHTML = '<option value="all">全部文件综合</option>' + files.map(f =>
+    '<option value="' + f.id + '">' + (f.title || f.id) + '</option>'
+  ).join('');
+}
+
+function openFile(id) {
+  const f = files.find(x => x.id === id);
+  if (!f) return;
+  document.getElementById('preview-card').style.display = 'block';
+  document.getElementById('preview-title').textContent = '📖 ' + (f.title || f.id);
+  document.getElementById('preview-content').innerHTML = renderWikiContent(f.content, files);
+}
+
+function openWikilink(target) {
+  // Find file by id, title, or partial match
+  let f = files.find(x => x.id === target || x.title === target);
+  if (!f) f = files.find(x => x.id.includes(target) || x.title.includes(target));
+  if (f) {
+    openFile(f.id);
+    document.querySelector('[data-t="files"]').click();
+  } else {
+    showMsg('w', `文件 "${target}" 未加载`);
+  }
+}
+
+// ======================== KNOWLEDGE GRAPH ========================
+function renderGraph() {
+  const canvas = document.getElementById('graph-canvas');
+  const rect = canvas.parentElement.getBoundingClientRect();
+  canvas.width = canvas.parentElement.clientWidth || 600;
+  canvas.height = 480;
+  const ctx = canvas.getContext('2d');
+  
+  if (files.length === 0) {
+    ctx.fillStyle = '#9aa0b0'; ctx.font = '14px sans-serif';
+    ctx.textAlign = 'center'; ctx.fillText('无数据，请先加载示例文件', canvas.width/2, canvas.height/2);
+    return;
+  }
+  
+  // Build nodes and edges
+  const nodes = files.map((f,i) => ({
+    id: f.id, label: (f.title || f.id).substring(0,18), index: i,
+    x: Math.random() * canvas.width, y: Math.random() * canvas.height,
+    vx: 0, vy: 0, r: 8 + Math.min(20, (f.links||[]).length) * 1.5
+  }));
+  
+  const nodeMap = {};
+  nodes.forEach(n => nodeMap[n.id] = n);
+  
+  const edges = [];
+  files.forEach(f => {
+    (f.links || []).forEach(target => {
+      const targetNode = nodeMap[target] || nodes.find(n => n.id.includes(target) || (n.label && n.label.includes(target)));
+      if (targetNode && targetNode.id !== f.id) {
+        edges.push({ source: nodeMap[f.id], target: targetNode });
+      }
+    });
+  });
+  
+  // Remove duplicates
+  const edgeSet = new Set();
+  const uniqueEdges = [];
+  edges.forEach(e => {
+    const key = [e.source.id, e.target.id].sort().join('|||');
+    if (!edgeSet.has(key)) { edgeSet.add(key); uniqueEdges.push(e); }
+  });
+  
+  // Stats
+  document.getElementById('graph-stats').innerHTML = [
+    '<div class="sc"><div class="v p">' + nodes.length + '</div><div class="l">节点(文件)</div></div>',
+    '<div class="sc"><div class="v g">' + uniqueEdges.length + '</div><div class="l">连线(链接)</div></div>',
+    '<div class="sc"><div class="v o">' + (uniqueEdges.length / Math.max(1, nodes.length)).toFixed(1) + '</div><div class="l">密度</div></div>',
+    '<div class="sc"><div class="v">' + Math.max(...nodes.map(n=>n.r)) + '</div><div class="l">最大节点</div></div>'
+  ].join('');
+  
+  const topLinked = [...nodes].sort((a,b) => b.r - a.r).slice(0,5);
+  document.getElementById('graph-detail').innerHTML =
+    '🏆 被引用最多: ' + topLinked.map(n => n.label).join(' → ');
+  
+  // Force-directed layout simulation
+  let iterations = 0;
+  const maxIter = 150;
+  const W = canvas.width, H = canvas.height;
+  
+  function simulate() {
+    if (iterations >= maxIter) { render(); return; }
+    
+    // Repulsion (all pairs)
+    const k = 80;
+    for (let i = 0; i < nodes.length; i++) {
+      for (let j = i+1; j < nodes.length; j++) {
+        const a = nodes[i], b = nodes[j];
+        let dx = b.x - a.x, dy = b.y - a.y;
+        let dist = Math.sqrt(dx*dx + dy*dy) || 1;
+        const force = k * k / dist;
+        const fx = dx / dist * force;
+        const fy = dy / dist * force;
+        a.vx -= fx; a.vy -= fy;
+        b.vx += fx; b.vy += fy;
+      }
+    }
+    
+    // Attraction (edges)
+    uniqueEdges.forEach(e => {
+      const a = e.source, b = e.target;
+      const dx = b.x - a.x, dy = b.y - a.y;
+      const dist = Math.sqrt(dx*dx + dy*dy) || 1;
+      const force = dist * dist / (k * 30);
+      const fx = dx / dist * force;
+      const fy = dy / dist * force;
+      a.vx += fx; a.vy += fy;
+      b.vx -= fx; b.vy -= fy;
+    });
+    
+    // Center gravity
+    const cx = W/2, cy = H/2;
+    nodes.forEach(n => {
+      n.vx += (cx - n.x) * 0.001;
+      n.vy += (cy - n.y) * 0.001;
+    });
+    
+    // Update positions
+    nodes.forEach(n => {
+      n.vx *= 0.85; n.vy *= 0.85; // damping
+      n.x += n.vx; n.y += n.vy;
+      n.x = Math.max(n.r, Math.min(W - n.r, n.x));
+      n.y = Math.max(n.r, Math.min(H - n.r, n.y));
+    });
+    
+    iterations++;
+    render();
+    requestAnimationFrame(simulate);
+  }
+  
+  let hoveredNode = null;
+  
+  function render() {
+    ctx.clearRect(0, 0, W, H);
+    
+    // Edges
+    ctx.strokeStyle = '#2d3148'; ctx.lineWidth = 1;
+    uniqueEdges.forEach(e => {
+      ctx.beginPath();
+      ctx.moveTo(e.source.x, e.source.y);
+      ctx.lineTo(e.target.x, e.target.y);
+      ctx.stroke();
+    });
+    
+    // Nodes
+    nodes.forEach(n => {
+      ctx.beginPath();
+      ctx.arc(n.x, n.y, n.r, 0, Math.PI * 2);
+      ctx.fillStyle = n === hoveredNode ? '#4fc3f7' : '#4fc3f788';
+      ctx.fill();
+      if (n === hoveredNode) {
+        ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.stroke();
+      }
+      ctx.fillStyle = '#e8eaed'; ctx.font = '11px sans-serif';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+      ctx.fillText(n.label, n.x, n.y + n.r + 3);
+    });
+    
+    document.getElementById('graph-tip').textContent = 
+      hoveredNode ? '📍 ' + hoveredNode.label + ' · 连线 ' + 
+        uniqueEdges.filter(e => e.source === hoveredNode || e.target === hoveredNode).length + ' 条'
+      : '🔄 图谱自动布局中... 悬停节点查看详情';
+  }
+  
+  canvas.onmousemove = function(e) {
+    const rect = canvas.getBoundingClientRect();
+    const mx = e.clientX - rect.left, my = e.clientY - rect.top;
+    const scaleX = canvas.width / rect.width;
+    const h = nodes.find(n => Math.hypot((mx*scaleX)-n.x, (my*scaleX)-n.y) < n.r + 5);
+    hoveredNode = h || null;
+    canvas.style.cursor = h ? 'pointer' : 'grab';
+    render();
+  };
+  
+  canvas.onclick = function(e) {
+    if (hoveredNode) {
+      openFile(hoveredNode.id);
+      document.querySelector('[data-t="files"]').click();
+    }
+  };
+  
+  // Reset and run
+  nodes.forEach(n => { n.vx = 0; n.vy = 0; });
+  iterations = 0;
+  simulate();
+}
+
+// ======================== READER ========================
+function renderReader() {
+  const el = document.getElementById('reader-file-list');
+  if (files.length === 0) {
+    el.innerHTML = '<p style="color:var(--t2)">无文件</p>';
+    return;
+  }
+  el.innerHTML = '<p style="color:var(--t2);margin-bottom:8px">点击文件在右侧阅读：</p>' +
+    files.map(f =>
+      '<div class="fc" onclick="readerOpen(\'' + f.id.replace(/'/g,"\\'") + '\')">' +
+      '<span class="fn">' + escapeHtml(f.title || f.id) + '</span>' +
+      '<span class="fl">' + (f.links||[]).length + ' 链接</span></div>'
+    ).join('');
+}
+
+function readerOpen(id) {
+  const f = files.find(x => x.id === id);
+  if (!f) return;
+  document.getElementById('reader-title').textContent = '📖 ' + (f.title || f.id);
+  document.getElementById('reader-content').innerHTML = renderWikiContent(f.content, files);
+}
+
+// ======================== SEARCH ========================
+function searchFiles() {
+  const q = document.getElementById('search-q').value.trim().toLowerCase();
+  const el = document.getElementById('search-results');
+  if (!q || files.length === 0) {
+    el.innerHTML = '输入关键词开始搜索';
+    return;
+  }
+  
+  const results = files.filter(f => {
+    const c = (f.title + ' ' + f.id + ' ' + f.content).toLowerCase();
+    return c.includes(q);
+  });
+  
+  if (results.length === 0) {
+    el.innerHTML = '<p style="color:var(--t2)">未找到匹配</p>';
+    return;
+  }
+  
+  el.innerHTML = results.map(f => {
+    // Find context around match
+    const idx = f.content.toLowerCase().indexOf(q);
+    const start = Math.max(0, idx - 40);
+    const end = Math.min(f.content.length, idx + 80);
+    const context = (start > 0 ? '...' : '') + f.content.substring(start, end) + (end < f.content.length ? '...' : '');
+    return '<div class="fc" onclick="openFile(\'' + f.id.replace(/'/g,"\\'") + '\')">' +
+      '<div><div class="fn">' + escapeHtml(f.title || f.id) + '</div>' +
+      '<div class="fm" style="font-size:11px;color:var(--t2)">' + escapeHtml(context) + '</div></div></div>';
+  }).join('');
+}
+
+// ======================== AI ========================
+async function runAI() {
+  const key = document.getElementById('ai-key').value.trim();
+  if (!key) { showMsg('w','请粘贴API Key'); return; }
+  if (files.length === 0) { showMsg('w','请先加载文件'); return; }
+  
+  document.getElementById('ai-progress').style.display = 'block';
+  document.getElementById('ai-result').style.display = 'none';
+  document.getElementById('ai-status').textContent = '构建文件摘要...';
+  
+  const scope = document.getElementById('ai-scope').value;
+  const targetFiles = scope === 'all' ? files : files.filter(f => f.id === scope);
+  
+  // Build summary
+  const summary = targetFiles.map(f => ({
+    id: f.id, title: f.title || f.id, size: f.size,
+    links: (f.links||[]).slice(0,10),
+    contentPreview: f.content.replace(/^---[\s\S]*?---/,'').substring(0,800)
+  }));
+  
+  document.getElementById('ai-summary').innerHTML = [
+    '<div class="sc"><div class="v">' + summary.length + '</div><div class="l">文件数</div></div>',
+    '<div class="sc"><div class="v">' + summary.reduce((a,f) => a + (f.links||[]).length, 0) + '</div><div class="l">引用总数</div></div>',
+    '<div class="sc"><div class="v o">' + (summary.reduce((a,f) => a + f.size, 0) / 1024).toFixed(0) + '</div><div class="l">总KB</div></div>'
+  ].join('');
+  
+  document.getElementById('ai-status').textContent = '发送给 DeepSeek AI...';
+  
+  try {
+    const resp = await fetch('https://api.deepseek.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json','Authorization':'Bearer '+key},
+      body: JSON.stringify({
+        model: 'deepseek-chat',
+        messages: [
+          {role:'system',content:'你是一位资深电力市场政策分析师。请基于提供的政策文件列表进行综合分析。\n\n## 分析维度\n1. **政策全景**：覆盖哪些领域？各省份各有何特点？\n2. **关键趋势**：近期政策的核心方向是什么？\n3. **关联分析**：文件之间的双向链接揭示了哪些知识点关系？\n4. **用户侧影响**：这些政策对工商业用电企业和VPP运营商有何影响？\n5. **行动建议**：给出3-5条基于政策趋势的具体建议。\n\n输出格式：专业Markdown报告，分章节，关键数据加粗。'},
+          {role:'user',content:'以下是政策文件库摘要（共'+summary.length+'个文件）：\n```json\n'+JSON.stringify(summary,null,2).substring(0,12000)+'\n```\n\n请基于这些政策文件进行综合分析。'}
+        ],
+        temperature:0.3, max_tokens:4096
+      })
+    });
+    if (!resp.ok) throw new Error(await resp.text());
+    const data = await resp.json();
+    const content = data.choices[0].message.content;
+    
+    document.getElementById('ai-progress').style.display = 'none';
+    document.getElementById('ai-result').style.display = 'block';
+    document.getElementById('ai-content').innerHTML =
+      '<div style="background:var(--bg4);padding:20px;border-radius:8px;line-height:1.8;font-size:13px">' +
+      content.replace(/### (.+)/g,'<h3 style="color:var(--ac);margin:16px 0 6px;font-size:14px">$1</h3>')
+        .replace(/## (.+)/g,'<h2 style="color:#fff;margin:20px 0 10px;font-size:16px;border-bottom:1px solid var(--bd);padding-bottom:6px">$1</h2>')
+        .replace(/\*\*(.+?)\*\*/g,'<strong style="color:#fff">$1</strong>')
+        .replace(/\n/g,'<br>')+'</div>';
+    showMsg('g','✅ AI分析完成');
+  } catch(e) {
+    document.getElementById('ai-progress').style.display = 'none';
+    showMsg('r','❌ '+e.message);
+  }
+}
+
+// ======================== UTILS ========================
+function escapeHtml(s) {
+  const d = document.createElement('div');
+  d.textContent = s || '';
+  return d.innerHTML;
+}
+
+function formatSize(n) {
+  return n > 1024 ? (n/1024).toFixed(1)+'KB' : n+'B';
+}
+
+function showMsg(type, msg) {
+  const el = document.createElement('div');
+  el.className = 'alert alert-' + type;
+  el.textContent = msg;
+  el.style.cssText = 'position:fixed;top:16px;right:16px;z-index:1000;min-width:240px';
+  document.querySelector('.ct').appendChild(el);
+  setTimeout(() => el.remove(), 4000);
+}
+</script>
+</body>
+</html>
