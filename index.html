@@ -443,10 +443,13 @@ function renderWikiContent(text, files) {
     const parts = content.split('|');
     const target = parts[0].trim();
     const display = parts[1] ? parts[1].trim() : target;
-    // Check if target exists in files
     const exists = files.some(f => f.id === target || f.title === target || f.id.includes(target));
-    const cls = exists ? 'wl" onclick="openWikilink(\\'' + target.replace(/'/g,"\\'") + '\\')"' : 'wl" style="opacity:0.6;cursor:help" title="文件未加载';
-    return '<a class="' + cls + '">' + display + '</a>';
+    const escaped = target.replace(/'/g, "\\'");
+    if (exists) {
+      return '<a class="wl" onclick="openWikilink(\''+escaped+'\')">'+display+'</a>';
+    } else {
+      return '<a class="wl" style="opacity:0.6;cursor:help" title="文件未加载">'+display+'</a>';
+    }
   });
   
   return html;
