@@ -105,6 +105,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
       <div style="display:flex;gap:8px;flex-wrap:wrap">
         <button class="btn btn-p" id="btn-samples">📦 加载示例文件</button>
         <button class="btn btn-s" id="btn-clear">🗑️ 清空数据</button>
+        <button class="btn" id="btn-remote" style="background:var(--ap);color:#000">📡 加载全量库</button>
       </div>
       <div id="file-stats" style="margin-top:8px;font-size:12px;color:var(--t2)"></div>
     </div>
@@ -486,6 +487,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('upfile').onchange = handleUpload;
   document.getElementById('btn-samples').onclick = loadSamples;
   document.getElementById('btn-clear').onclick = clearAll;
+  document.getElementById('btn-remote').onclick = loadRemoteLibrary;
   document.getElementById('btn-ai').onclick = runAI;
   document.getElementById('btn-search').onclick = searchFiles;
   document.getElementById('search-q').onkeydown = e => { if(e.key==='Enter') searchFiles(); };
@@ -896,6 +898,30 @@ function escapeHtml(s) {
 
 function formatSize(n) {
   return n > 1024 ? (n/1024).toFixed(1)+'KB' : n+'B';
+}
+
+async function loadRemoteLibrary() {
+  showMsg('i', '📡 正在从 GitHub Pages 加载全量政策库...');
+  try {
+    const resp = await fetch('https://wjych.github.io/policy-graph/policy_data.json');
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    const data = await resp.json();
+    if (!data.files || data.files.length === 0) throw new Error('无文件');
+    const total = data.files.length;
+    let loaded = 0;
+    for (const f of data.files) {
+      const existing = files.findIndex(x => x.id === f.id);
+      if (existing >= 0) files[existing] = f;
+      else files.push(f);
+      await dbPut(f);
+      loaded++;
+      if (loaded % 50 === 0) document.getElementById('file-stats').innerHTML = '⏳ 加载中 ' + loaded + '/' + total;
+    }
+    renderFileList();
+    showMsg('g', '✅ 已加载 ' + total + ' 个政策文件（' + (data.total_links||0) + ' 条链接）');
+  } catch(e) {
+    showMsg('r', '❌ 加载失败: ' + e.message);
+  }
 }
 
 function showMsg(type, msg) {
